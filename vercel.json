@@ -1,5 +1,3 @@
 {
-  "engines": {
-    "node": ">=18"
-  }
+  "framework": "create-react-app"
 }
