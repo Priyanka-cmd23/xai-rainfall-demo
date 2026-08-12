@@ -88,8 +88,6 @@ function LocationSearch({ onSelect }) {
     }
   };
 
-  const labelFor = (p) => [p.name, p.admin1, p.country].filter(Boolean).join(" · ");
-
   return (
     <label className="location-field">
       <span className="eyebrow">SEARCH A PLACE</span>
