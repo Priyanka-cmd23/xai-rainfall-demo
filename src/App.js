@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
+import LocationSearch from "./LocationSearch";
+import LiveWeather from "./LiveWeather";
+import { fetchForecast, isRainCode } from "./weather";
+
+const clamp = (v) => Math.max(0, Math.min(1, v));
 
 const N = 18;
 
@@ -11,8 +16,6 @@ const BANDS = [
   { key: "very_heavy", label: "Very heavy", color: "#FF8C42" },
   { key: "extremely_heavy", label: "Extremely heavy", color: "#F04438" }
 ];
-
-const clamp = (v) => Math.max(0, Math.min(1, v));
 
 const seeded = (seed) => {
   let t = seed + 0x6d2b79f5;
@@ -215,7 +218,13 @@ function App() {
   const [classKey, setClassKey] = useState("heavy");
   const [now, setNow] = useState(new Date());
 
+  const [place, setPlace] = useState(null);
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState(null);
+
   const timerRef = useRef(null);
+  const weatherAbortRef = useRef(null);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -225,15 +234,61 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!place) {
+      setWeather(null);
+      setWeatherError(null);
+      return;
+    }
+    if (weatherAbortRef.current) weatherAbortRef.current.abort();
+    const controller = new AbortController();
+    weatherAbortRef.current = controller;
+    setWeatherLoading(true);
+    setWeatherError(null);
+    fetchForecast(place, controller.signal)
+      .then((json) => {
+        if (controller.signal.aborted) return;
+        setWeather(json);
+        setWeatherLoading(false);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setWeatherError(
+          err.name === "AbortError" ? null : err.message || "Could not load weather."
+        );
+        setWeatherLoading(false);
+      });
+    return () => controller.abort();
+  }, [place]);
+
   const bandName = selected ? bandFor(selected.intensity).label : "Awaiting selection";
 
-  const alerts = useMemo(
+  const liveRaining = Boolean(
+    weather?.current && isRainCode(weather.current.weather_code)
+  );
+
+  const applyLiveToScene = (pathScene) => {
+    if (!liveRaining) return pathScene;
+    const cx = 9;
+    const cy = 9;
+    return pathScene.map((cell) => {
+      const dist = Math.hypot(cell.x - cx, cell.y - cy);
+      const boost = clamp(1.18 - dist * 0.03);
+      return {
+        ...cell,
+        intensity: clamp(cell.intensity + boost * 0.45)
+      };
+    });
+  };
+
+  const displayAlerts = useMemo(
     () =>
-      scene
+      applyLiveToScene(scene)
         .filter((c) => c.intensity > 0.65)
         .sort((a, b) => b.intensity - a.intensity)
         .slice(0, 5),
-    [scene]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scene, liveRaining]
   );
 
   const attribution = useMemo(
@@ -271,6 +326,12 @@ function App() {
 
   const timestamp = now.toISOString().slice(0, 19).replace("T", " ");
 
+  const displayScene = useMemo(
+    () => applyLiveToScene(scene),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scene, liveRaining]
+  );
+
   return (
     <div className="console-shell">
       <header className="topbar">
@@ -285,7 +346,9 @@ function App() {
         </div>
         <div className="status-cluster">
           <span className="status-dot" />
-          <span data-testid="system-status">SYNTHETIC MODE · ONLINE</span>
+          <span data-testid="system-status">
+            {place ? "LIVE MODE · ONLINE" : "SYNTHETIC MODE · ONLINE"}
+          </span>
           <span className="timestamp" data-testid="timestamp">
             {timestamp} UTC
           </span>
@@ -309,6 +372,7 @@ function App() {
           </div>
 
           <div className="control-deck">
+            <LocationSearch onSelect={setPlace} />
             <label htmlFor="class-select">
               EXPLAIN RAINFALL CLASS
               <select
@@ -344,7 +408,7 @@ function App() {
             STORM CORES <b>2–4 GAUSSIANS</b>
           </span>
           <span data-testid="telemetry-source">
-            SOURCE <b>INSAT-3D / MOCK STREAM</b>
+            SOURCE <b>{place ? `${place.name} · LIVE API` : "INSAT-3D / MOCK STREAM"}</b>
           </span>
           <span className="seed-readout" data-testid="seed-readout">
             SEED <b>{seed}</b>
@@ -354,23 +418,31 @@ function App() {
         <section className="maps-grid">
           <GridPanel
             type="raw"
-            scene={scene}
+            scene={displayScene}
             selected={selected}
             onSelect={setSelected}
           />
           <GridPanel
             type="rain"
-            scene={scene}
+            scene={displayScene}
             selected={selected}
             onSelect={setSelected}
           />
           <GridPanel
             type="xai"
-            scene={scene}
+            scene={displayScene}
             selected={selected}
             onSelect={setSelected}
           />
         </section>
+
+        <LiveWeather
+          place={place}
+          data={weather}
+          loading={weatherLoading}
+          error={weatherError}
+          onDismiss={() => setPlace(null)}
+        />
 
         <section className="lower-grid">
           <aside className="alerts-panel">
@@ -380,15 +452,17 @@ function App() {
                 <h2 data-testid="alerts-title">High-risk zones</h2>
               </div>
               <span className="alert-count" data-testid="alert-count">
-                {alerts.length} ACTIVE
+                {displayAlerts.length} ACTIVE
               </span>
             </div>
             <p className="section-subtitle">
-              Cells above 65% predicted intensity · outbound channel ready
+              {liveRaining
+                ? "Live precipitation active · cells boosted toward the storm core"
+                : "Cells above 65% predicted intensity · outbound channel ready"}
             </p>
             <div className="alert-list">
-              {alerts.length ? (
-                alerts.map((cell, i) => (
+              {displayAlerts.length ? (
+                displayAlerts.map((cell, i) => (
                   <button
                     key={`${cell.x}-${cell.y}`}
                     className="alert-item"
@@ -475,7 +549,9 @@ function App() {
       <footer className="footer-bar">
         <span>© INDIAN SPACE RESEARCH ORGANISATION · DEMONSTRATION SYSTEM</span>
         <span data-testid="mock-disclaimer">
-          ALL VALUES MOCKED / SYNTHETIC · NO LIVE DATA CONNECTION
+          {place
+            ? "LIVE CONDITIONS VIA OPEN-METEO · FORECAST MAPS SYNTHETIC"
+            : "ALL VALUES MOCKED / SYNTHETIC · NO LIVE DATA CONNECTION"}
         </span>
       </footer>
     </div>

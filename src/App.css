@@ -653,6 +653,18 @@ body {
   .run-button {
     width: 100%;
   }
+  .location-field {
+    width: 100%;
+  }
+  .weather-body {
+    grid-template-columns: 1fr;
+  }
+  .wx-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hourly-row {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
   .telemetry-row {
     margin-top: 30px;
     gap: 14px;
@@ -691,4 +703,304 @@ body {
   .alert-item {
     transition: none;
   }
+}
+
+/* ---------- Location search ---------- */
+.location-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  min-width: 260px;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font: 500 13px "IBM Plex Sans";
+  padding: 12px 34px 12px 13px;
+  width: 100%;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: #5b7080;
+}
+
+.search-input:focus {
+  border-color: var(--amber);
+}
+
+.search-status {
+  position: absolute;
+  right: 12px;
+  color: var(--muted);
+  font-size: 15px;
+  font-style: normal;
+  pointer-events: none;
+}
+
+.search-status.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.suggestions {
+  position: absolute;
+  top: 62px;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  max-height: 260px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.suggestion {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  text-align: left;
+  padding: 10px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.suggestion.active,
+.suggestion:hover {
+  background: var(--surface);
+}
+
+.suggestion b {
+  font: 600 13px "IBM Plex Sans";
+}
+
+.suggestion small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-chip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font: 500 10px "IBM Plex Mono";
+  letter-spacing: 0.04em;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.quick-chip:hover:not(:disabled) {
+  border-color: var(--amber);
+  color: var(--text);
+}
+
+.quick-chip:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* ---------- Live weather panel ---------- */
+.weather-panel {
+  background: rgba(17, 26, 37, 0.94);
+  border: 1px solid var(--line);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.weather-panel h2 {
+  font: 700 19px Chivo;
+  margin: 7px 0 0;
+}
+
+.dismiss-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.dismiss-btn:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.weather-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font: 11px "IBM Plex Mono";
+  padding: 22px 2px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--line);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.weather-error {
+  color: var(--red);
+  font: 11px "IBM Plex Mono";
+  padding: 22px 2px;
+}
+
+.weather-empty {
+  color: var(--muted);
+  font: 11px "IBM Plex Mono";
+  padding: 22px 2px;
+}
+
+.weather-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px 30px;
+  margin-top: 16px;
+}
+
+.weather-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.wx-emoji {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.wx-temp {
+  display: flex;
+  flex-direction: column;
+}
+
+.wx-temp b {
+  font: 800 42px/1 Chivo;
+  letter-spacing: -1px;
+}
+
+.wx-temp small {
+  color: var(--muted);
+  font: 12px "IBM Plex Mono";
+  margin-top: 3px;
+}
+
+.wx-feels {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 8px;
+  grid-column: 1 / -1;
+}
+
+.wx-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wx-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+}
+
+.wx-stat b {
+  font: 600 16px "IBM Plex Mono";
+}
+
+.wx-stat small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.hourly-label {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 20px 0 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  grid-column: 1 / -1;
+}
+
+.hourly-label b {
+  font: 600 11px "IBM Plex Mono";
+  color: var(--green);
+}
+
+.hourly-label b.rainy {
+  color: var(--red);
+}
+
+.hourly-row {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.hour-chip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.hour-chip span {
+  font: 500 9px "IBM Plex Mono";
+  color: var(--muted);
+}
+
+.hour-chip i {
+  font-style: normal;
+  font-size: 16px;
+}
+
+.hour-chip b {
+  font: 600 12px "IBM Plex Mono";
+}
+
+.hour-chip small {
+  font: 500 9px "IBM Plex Mono";
+  color: #8fb1b8;
 }

@@ -13,6 +13,8 @@ Built for the SIH-1521 smart India hackathon mission track. All values are **syn
 - 18 × 18 storm grid animated with a radar scanline
 - Click any cell in the prediction / XAI panels to inspect per-coordinate feature attribution (deterministic)
 - "Run Prediction" regenerates a fresh storm field from a new seed
+- **Live weather for any place** — search a city or region (e.g. Vadodara, Bareilly, Delhi, Paris, Berlin, Rome) or use the quick-select chips. Real current conditions + 24-hour hourly outlook from the free Open-Meteo API (no API key).
+- When the selected place is currently raining, the synthetic storm field and high-risk alerts boost toward the live storm core, and the dashboard switches to **LIVE MODE**
 - Live UTC timestamp, high-risk zone alerts panel, fully responsive layout
 - Respects `prefers-reduced-motion`
 
@@ -20,6 +22,7 @@ Built for the SIH-1521 smart India hackathon mission track. All values are **syn
 
 - React 18 + Vite-free Create React App (webpack 5)
 - `@tanstack/react-query` (configured, ready for future live data)
+- [Open-Meteo](https://open-meteo.com) — free geocoding + forecast API, no key required
 - Vanilla CSS with dark "mission control" theme
 
 ## Getting started
@@ -36,4 +39,4 @@ Static build (`npm run build`) — deployable to **Vercel** with no configuratio
 
 ## Disclaimer
 
-This is a demonstration system. The rainfall maps, attributions, and alerts shown are generated deterministically from a seed and do **not** represent real weather forecasts. No ISRO or IMD live data is consumed.
+This is a demonstration system. Live weather for a selected place comes from the Open-Meteo API (real data). The rainfall maps, per-cell attributions, and high-risk alert *ranking* are deterministic synthetic visuals driven by a seed — they do **not** represent a real satellite model output. No ISRO or IMD live data is consumed.
